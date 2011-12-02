@@ -81,11 +81,18 @@ DESIGN NOTES
 
 INSTALLATION
 
-  Copy file_slurp.lua into your LUA_PATH.  You may optionally run
-  "lua file_slurp.lua unpack" to unpack the module into individual files in
-  an "out" subdirectory.   To subsequently install into LuaRocks, run
-  "cd out && luarocks make file_slurp*.rockspec"
+  Download file_slurp.lua:
   
+    wget https://raw.github.com/gist/1325400/file_slurp.lua
+
+  Copy file_slurp.lua into your LUA_PATH.
+  
+  Alternately, unpack it and install into LuaRocks:
+  
+     wget https://raw.github.com/gist/1422205/sourceunpack.lua
+     lua sourceunpack file_slurp.lua
+     (cd out && luarocks make)
+
 Related work
 
   Similar slurp functions have been implemented in Lua and other languages:
@@ -124,7 +131,7 @@ THE SOFTWARE.
 -- file_slurp.lua
 -- (c) 2011 David Manura.  Licensed under the same terms as Lua 5.1 (MIT license).
 
-local FS = {_TYPE='module', _NAME='file_slurp', _VERSION='000.004.2011-11-19'}
+local FS = {_TYPE='module', _NAME='file_slurp', _VERSION='0.4.20111201'}
 
 local function check_options(options)
   if not options then return {} end
@@ -175,10 +182,6 @@ function FS.testfile(filename, options)
   else return false, err .. ' [code '..code..']' end
 end
   
-
--- This ugly line will delete itself upon unpacking the module.
-if...=='unpack'then assert(loadstring(FS.readfile'file_slurp.lua':gsub('[^\n]*return FS[^\n]*','')))()end
-
 return FS
 
 -- Implementation footnotes: The (optional) stack `level` parameter on
@@ -192,12 +195,9 @@ return FS
 package = 'file_slurp'
 version = '$(_VERSION)-1'
 source = {
-  -- IMPROVE?
+  url = 'https://raw.github.com/gist/1325400/$(GITID)/file_slurp.lua',
   --url = 'https://raw.github.com/gist/1325400/file_slurp.lua', -- latest raw
-  --url = 'https://raw.github.com/gist/1325400/$(GITVERSION)/file_slurp.lua',
   --url = 'https://gist.github.com/gists/1325400/download',
-  --file = 'file_slurp-$(_VERSION).tar.gz'
-  url = '$(URL)'
   md5 = '$(MD5)'
 }
 description = {
@@ -286,37 +286,11 @@ print 'OK'
 --]]---------------------------------------------------------------------
 
 --[[ FILE CHANGES.txt
-000.004.2011-11-19
+0.4.20111129
   Add `testfile` function.
   Change `_VERSION` to string.
   minor: Generalize unpack.lua; add CHANGES.txt
 
-0.001001 2011-11-05
+0.1.20111105
   Initial public release
 --]]
-
---[[ FILE unpack.lua  -- return FS
-
--- This optional code unpacks files into an "out" subdirectory for deployment.
-local M = FS
-local name = arg[0]:match('[^/\\]+')
-local code = FS.readfile(name, 'T')
-code = code:gsub('%-*\n*%-%-%[%[%s*FILE%s+(%S+).-\n\n?(.-)%-%-%]%]%-*%s*',
- function(filename, text)
-  filename = filename:gsub('%$%(_VERSION%)', M._VERSION)
-  text = text:gsub('%$%(_VERSION%)', M._VERSION)
-  if filename ~= 'unpack.lua' then
-    if not FS.writefile('out/.test', '', 's') then os.execute'mkdir out' end
-    os.remove'out/.test'
-    print('writing out/' .. filename)
-    FS.writefile('out/' .. filename, text)
-  end
-  return ''
-end)
-code = code:gsub('%-%- ?This ugly line[^\n]*\n[^\n]*\n', '')
-print('writing out/' .. name)
-FS.writefile('out/' .. name, code)
-print('testing...')
-assert(loadfile('out/test.lua'))()
-
---]]---------------------------------------------------------------------
